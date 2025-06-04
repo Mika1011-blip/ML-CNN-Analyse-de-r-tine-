@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Retina Analysis Web App</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      line-height: 1.5;
+    }
+    h1 { text-align: center; }
+    .section { margin-top: 2rem; }
+    img { max-width: 300px; margin-top: 1rem; border: 1px solid #ccc; }
+    pre { background: #f4f4f4; padding: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Retina Analysis Demo</h1>
+
+  <!-- SECTION A: Upload & Preprocess/Classification -->
+  <div class="section" id="uploadSection">
+    <h2>1. Upload an Image</h2>
+    <input id="imageInput" type="file" accept="image/*" />
+    <button id="uploadBtn">Preprocess & Classify</button>
+
+    <div id="resultArea" style="margin-top: 1rem;">
+      <!-- Raw and processed images + class will appear here -->
+    </div>
+  </div>
+
+  <!-- SECTION B: (Optional) Call the concat API for text concatenation -->
+  <div class="section" id="concatSection">
+    <h2>2. (Optional) Text Concatenation</h2>
+    <input id="userInput" type="text" placeholder="Type something…" />
+    <button id="concatBtn">Submit</button>
+    <div id="concatResult" style="margin-top: 0.5rem; font-weight: bold;"></div>
+  </div>
+
+  <script>
+    // ---- SECTION A: Handle image upload + preprocess/classify ----
+
+    document.getElementById("uploadBtn").addEventListener("click", () => {
+      const fileInput = document.getElementById("imageInput");
+      const files = fileInput.files;
+      if (!files || files.length === 0) {
+        alert("Please select an image file first.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", files[0]);
+
+      fetch("/api/classify", {
+        method: "POST",
+        body: formData
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Server responded " + res.status);
+          return res.json();
+        })
+        .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          const resultArea = document.getElementById("resultArea");
+          resultArea.innerHTML = `
+            <p><strong>Raw Upload:</strong></p>
+            <img src="${data.raw_url}" alt="Raw Upload" />
+            <p><strong>Preprocessed Image:</strong></p>
+            <img src="${data.processed_url}" alt="Preprocessed" />
+            <p><strong>Predicted Class ID:</strong> ${data.classification}</p>
+          `;
+        })
+        .catch(err => {
+          document.getElementById("resultArea").innerHTML = `
+            <p style="color:red">Error: ${err.message}</p>
+          `;
+        });
+    });
+
+    // ---- SECTION B: (Optional) Call the concat API ----
+
+    document.getElementById("concatBtn").addEventListener("click", () => {
+      const text = document.getElementById("userInput").value;
+      if (!text) {
+        alert("Please enter some text first.");
+        return;
+      }
+
+      fetch("/api/concat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Server responded " + res.status);
+          return res.json();
+        })
+        .then(data => {
+          document.getElementById("concatResult").innerText = data.result;
+        })
+        .catch(err => {
+          document.getElementById("concatResult").innerText = "Error: " + err.message;
+        });
+    });
+  </script>
+</body>
+</html>
