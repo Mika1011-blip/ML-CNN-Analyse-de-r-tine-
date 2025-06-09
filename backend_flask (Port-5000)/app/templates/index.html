@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Retina Analysis Web App</title>
+  <style>
+  /* Robotic, single-color, no rounding */
+  :root {
+    --bg: #D9D9D9;         /* pure black background */
+    --panel: #d4d4d4;      /* slightly lighter panels */
+    --text: #1E1E1E;       /* neon-green text */
+    --accent: #1E1E1E;     /* same neon green for accents */
+    --gap: 1rem;
+    --shadow: none;        /* no shadowing */
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Courier New", Courier, monospace;
+    padding: var(--gap);
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: var(--gap);
+  }
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap);
+  }
+  .section {
+    background: var(--panel);
+    padding: var(--gap);
+    border: 1px solid var(--accent);
+    border-radius: 0;      /* hard edges */
+  }
+  /* Upload panel */
+  #uploadSection input,
+  #uploadSection button {
+    width: 100%;
+    font-family: inherit;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--accent);
+    border-radius: 0;
+  }
+  #uploadSection button {
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  #uploadSection button:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  #resultArea img {
+    display: block;
+    max-width: 100%;
+    margin-top: var(--gap);
+    border: 1px solid var(--accent);
+    border-radius: 0;
+  }
+  /* Chat panel */
+  #chatWindow {
+    background: var(--panel);
+    padding: var(--gap);
+    border: 1px solid var(--accent);
+    border-radius: 0;
+    height: 400px;
+    overflow-y: auto;
+  }
+  .message {
+    margin-bottom: var(--gap);
+  }
+  .message .sender {
+    display: block;
+    color: var(--accent);
+  }
+  .message .text {
+    white-space: pre-wrap;
+  }
+  #controls {
+    display: flex;
+    margin-top: var(--gap);
+  }
+  #msgInput {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 1rem;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--accent);
+    border-right: none;
+    border-radius: 0;
+    font-family: inherit;
+  }
+  #sendBtn {
+    padding: 0 1rem;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--accent);
+    border-left: none;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  #sendBtn:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+  #sendBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>
+
+</head>
+
+<body>
+  <h1>Retina Analysis Demo</h1>
+
+  <div class="container">
+    <!-- SECTION A: Upload & Preprocess/Classification -->
+    <div class="left">
+      <div class="section" id="uploadSection">
+        <h2>1. Upload an Image</h2>
+        <input id="imageInput" type="file" accept="image/*" />
+        <button id="uploadBtn">Preprocess & Classify</button>
+
+        <div id="resultArea" style="margin-top: 1rem;">
+          <!-- Raw and processed images + class will appear here -->
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <div id="chatWindow">
+        <h4>I'm your Advisor, ask me !</h1>
+        <!-- Messages will be appended here -->
+
+        <!-- SECTION B: CHATGPT -->
+      </div>
+      <div id="controls">
+        <input id="msgInput" type="text" placeholder="Type your message…" autocomplete="off" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+
+    //SECTION B CHATPGT
+    const chatWindow = document.getElementById("chatWindow");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function appendMessage(sender, text) {
+      const div = document.createElement("div");
+      div.className = "message " + (sender === "You" ? "user" : "Advisor");
+      div.innerHTML = `
+        <span class="sender"><strong>${sender}:</strong></span>
+        <span class="text">${text.replace(/\n/g, "<br>")}</span>
+      `;
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = msgInput.value.trim();
+      if (!text) return;
+      appendMessage("You", text);
+      msgInput.value = "";
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/chatgpt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        if (data.reply) {
+          appendMessage("Advisor", data.reply);
+        } else {
+          appendMessage("Advisor", "Error: " + (data.error || "Unknown error"));
+        }
+      } catch (err) {
+        appendMessage("Advisor", "Error: " + err.message);
+      } finally {
+        sendBtn.disabled = false;
+        msgInput.focus();
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    msgInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    // ---- SECTION A: Handle image upload + preprocess/classify ----
+    document.getElementById("uploadBtn").addEventListener("click", () => {
+      const fileInput = document.getElementById("imageInput");
+      const files = fileInput.files;
+      if (!files || files.length === 0) {
+        alert("Please select an image file first.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", files[0]);
+
+      fetch("/api/classify", {
+        method: "POST",
+        body: formData
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Server responded " + res.status);
+          return res.json();
+        })
+        .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          const resultArea = document.getElementById("resultArea");
+          resultArea.innerHTML = `
+            <p><strong>Raw Upload:</strong></p>
+            <img height="300" src="${data.raw_url}" alt="${data.raw_url}" />
+            <p><strong>Preprocessed Image:</strong></p>
+            <img height="300" src="${data.processed_url}" alt="Preprocessed" />
+            <br><p><mark><strong>Predicted Classification :</strong> <u>${data.classification}</u></mark></p>
+          `;
+          appendMessage("Advisor", data.chatgpt_reply)
+        })
+        .catch(err => {
+          document.getElementById("resultArea").innerHTML = `
+            <p style="color:red">Error: ${err.message}</p>
+          `;
+        });
+    });
+    // Focus the input on load
+    msgInput.focus();
+  </script>
+</body>
+
+</html>
