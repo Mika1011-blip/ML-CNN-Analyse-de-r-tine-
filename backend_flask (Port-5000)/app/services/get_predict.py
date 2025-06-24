@@ -41,10 +41,10 @@ def get_efficientNetB3(
     return model
 
 import_weight = False
-model = get_efficientNetB3(backbone_trainable=True)
 
 if not import_weight:
-    model.load_weights(f"{os.getcwd()}/app/services/model_weights.h5")
+    model = get_efficientNetB3(backbone_trainable=True)
+    model.load_weights(f"{os.getcwd()}/app/services/model_weights/multi_classification_weights.h5")
     import_weight = True
 
 def predict(img: np.ndarray):

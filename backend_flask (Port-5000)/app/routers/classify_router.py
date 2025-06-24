@@ -5,8 +5,9 @@ from flask import Blueprint, request, jsonify, current_app, session
 from PIL import Image
 
 from app.services.get_classification import classify
-from app.services.get_preprocess    import preprocess
-from app.services.chatgpt           import ask_chatgpt
+from app.services.get_preprocess import preprocess
+from app.services.chatgpt import ask_chatgpt
+from app.services.verify_retina import verify_retina
 
 classes = ["0 - No_DR",
 "1 - Mild",
@@ -66,6 +67,14 @@ def api_classify():
         img = Image.open(raw_path).convert("RGB")
         arr = np.array(img)
 
+        if not verify_retina(arr):
+            return jsonify({
+                "error": "Invalid retina image",
+                "filename":filename,
+                "extension": ext,
+                "allowed": sorted(ALLOWED_EXTENSIONS)
+            }), 400
+
         proc = preprocess(arr)
         pred_int  = classify(arr)
         label = classes[pred_int]
@@ -85,7 +94,7 @@ def api_classify():
     if "history" not in session:
         session["history"] = []
     diag = f"Diabetic Retinopathy: {label}"
-    prompt = f"Explain the diagnosis: {diag}"
+    prompt = f"'ROLE : SYSTEM' -> Explain the diagnosis (reply this message only to explain, do not reply like you are responding to a message): {diag}"
     reply = ask_chatgpt(user_message=prompt, history=session["history"], diagnosed=diag)
     h = session["history"]
     h.append({"role":"user",      "content":prompt})

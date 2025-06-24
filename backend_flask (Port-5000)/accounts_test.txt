@@ -1,0 +1,12 @@
+| Name           | Email                                                           | Password       |
+| -------------- | --------------------------------------------------------------- | -------------- |
+| Alice Johnson  | [alice.johnson@example.com](mailto:alice.johnson@example.com)   | P\@ssw0rd!2025 |
+| Bob Martinez   | [bob.martinez@example.org](mailto:bob.martinez@example.org)     | Secur3Key#89   |
+| Carol Nguyen   | [carol.nguyen@example.net](mailto:carol.nguyen@example.net)     | BlueSky\_456   |
+| David O’Connor | [david.oconnor@example.com](mailto:david.oconnor@example.com)   | D\@v!d2025     |
+| Emma Schmidt   | [emma.schmidt@example.de](mailto:emma.schmidt@example.de)       | Emm\@Sch!23    |
+| Faisal Ahmed   | [faisal.ahmed@example.co.uk](mailto:faisal.ahmed@example.co.uk) | F\@isal#321    |
+| Grace Lee      | [grace.lee@example.io](mailto:grace.lee@example.io)             | Gr\@ce\_L33    |
+| Hugo Fernández | [hugo.fernandez@example.es](mailto:hugo.fernandez@example.es)   | HFern4ndez!    |
+| Isabella Rossi | [isabella.rossi@example.it](mailto:isabella.rossi@example.it)   | Is\@bella2025  |
+| Jason Patel    | [jason.patel@example.in](mailto:jason.patel@example.in)         | J\@sonP\@tel99 |
